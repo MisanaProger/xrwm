@@ -1,0 +1,12 @@
+[package]
+name = "xrwm"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = "1.0.190"
+toml = "0.8.6"
+wayland-client = "0.31.1"
+xcb = {version = "1.2.2", features = ["xlib_xcb", "composite"]}
