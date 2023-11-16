@@ -2,15 +2,15 @@ use std::{cell::RefCell, sync::Arc};
 
 use xcb::x::ConfigWindow;
 
-pub struct Window {
+pub struct XWindow {
     window: xcb::x::Window,
     connection: Arc<xcb::Connection>,
     current_tag: RefCell<u32>,
-    awailable_tags: TagPermitions,
+    allowed_tags: TagRules,
 }
 
 #[derive(Clone)]
-pub enum TagPermitions {
+pub enum TagRules {
     All,
     Only(Vec<u32>),
 }
@@ -47,18 +47,38 @@ impl WindowSize {
     }
 }
 
-impl Window {
+trait Window {
+    //Window size
+    fn window_size(&self) -> Result<WindowSize, xcb::Error>;
+    fn resize_window(&self, window_size: WindowSize) -> Result<(), xcb::ConnError>;
+
+    //Window position
+    fn window_position(&self) -> Result<WindowPosition, xcb::Error>;
+    fn change_window_position(&self, window_position: WindowPosition)
+        -> Result<(), xcb::ConnError>;
+
+    //Border
+    fn border_size(&self) -> Result<u16, xcb::Error>;
+    fn change_border_size(&self, border_size: u16) -> Result<(), xcb::ConnError>;
+
+    //Tags
+    fn move_to(&self, tag: u32);
+    fn current_tag(&self) -> u32;
+    fn allowed_tags(&self) -> TagRules;
+}
+
+impl XWindow {
     pub fn new(
         window: xcb::x::Window,
         connection: Arc<xcb::Connection>,
         current_tag: u32,
-        awailable_tags: TagPermitions,
-    ) -> Window {
-        let window = Window {
+        allowed_tags: TagRules,
+    ) -> Self {
+        let window = XWindow {
             window,
             connection,
             current_tag: RefCell::new(current_tag),
-            awailable_tags,
+            allowed_tags,
         };
         window.move_to(current_tag);
         window
@@ -68,7 +88,14 @@ impl Window {
         self.window.clone()
     }
 
-    pub fn window_size(&self) -> Result<WindowSize, xcb::Error> {
+    fn set_current_tag(&self, new_tag: u32) {
+        *(self.current_tag).borrow_mut() = new_tag
+    }
+}
+
+impl Window for XWindow {
+    //Window size
+    fn window_size(&self) -> Result<WindowSize, xcb::Error> {
         let cookie = self.connection.send_request(&xcb::x::GetGeometry {
             drawable: xcb::x::Drawable::Window(self.window()),
         });
@@ -79,7 +106,7 @@ impl Window {
         })
     }
 
-    pub fn resize_window(&self, window_size: WindowSize) -> Result<(), xcb::ConnError> {
+    fn resize_window(&self, window_size: WindowSize) -> Result<(), xcb::ConnError> {
         self.connection.send_request(&xcb::x::ConfigureWindow {
             window: self.window(),
             value_list: &[
@@ -90,7 +117,8 @@ impl Window {
         self.connection.flush()
     }
 
-    pub fn window_position(&self) -> Result<WindowPosition, xcb::Error> {
+    //Window position
+    fn window_position(&self) -> Result<WindowPosition, xcb::Error> {
         let cookie = self.connection.send_request(&xcb::x::GetGeometry {
             drawable: xcb::x::Drawable::Window(self.window()),
         });
@@ -101,7 +129,7 @@ impl Window {
         })
     }
 
-    pub fn change_window_position(
+    fn change_window_position(
         &self,
         window_position: WindowPosition,
     ) -> Result<(), xcb::ConnError> {
@@ -115,7 +143,8 @@ impl Window {
         self.connection.flush()
     }
 
-    pub fn border_size(&self) -> Result<u16, xcb::Error> {
+    //Border size
+    fn border_size(&self) -> Result<u16, xcb::Error> {
         let cookie = self.connection.send_request(&xcb::x::GetGeometry {
             drawable: xcb::x::Drawable::Window(self.window()),
         });
@@ -123,7 +152,7 @@ impl Window {
         Ok(responce.border_width())
     }
 
-    pub fn change_border_size(&self, border_size: u16) -> Result<(), xcb::ConnError> {
+    fn change_border_size(&self, border_size: u16) -> Result<(), xcb::ConnError> {
         self.connection.send_request(&xcb::x::ConfigureWindow {
             window: self.window(),
             value_list: &[ConfigWindow::BorderWidth(border_size as u32)],
@@ -131,20 +160,26 @@ impl Window {
         self.connection.flush()
     }
 
-    pub fn move_to(&self, tag: u32) {
-        match self.awailable_tags.clone() {
-            TagPermitions::All => *(self.current_tag).borrow_mut() = tag,
-            TagPermitions::Only(awailable_tags) => {
-                if awailable_tags.contains(&tag) || awailable_tags.is_empty() {
-                    *(self.current_tag).borrow_mut() = tag;
+    fn allowed_tags(&self) -> TagRules {
+        self.allowed_tags.clone()
+    }
+
+    //Tags
+    fn move_to(&self, tag: u32) {
+        match self.allowed_tags.clone() {
+            TagRules::All => self.set_current_tag(tag),
+            TagRules::Only(allowed_tags) => {
+                if allowed_tags.contains(&tag) || allowed_tags.is_empty() {
+                    self.set_current_tag(tag);
                     return;
                 }
-                *(self.current_tag).borrow_mut() = *awailable_tags.first().unwrap();
+
+                self.set_current_tag(*allowed_tags.first().unwrap())
             }
         }
     }
 
-    pub fn current_tag(&self) -> u32 {
+    fn current_tag(&self) -> u32 {
         self.current_tag.clone().into_inner()
     }
 }

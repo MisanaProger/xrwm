@@ -1,5 +1,5 @@
+mod keyboard_event_handler;
+
 pub enum EventHadlerError {}
 
-pub fn handle_event(event: xcb::Event) -> Result<(), EventHadlerError> {
-    todo!()
-}
+pub struct EventHandler {}

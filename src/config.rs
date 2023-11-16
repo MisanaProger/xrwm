@@ -3,9 +3,7 @@ use std::{
     io::Read,
 };
 
-use toml::{de::Error, toml};
-
-use crate::window_manager::print_runtime_error;
+use toml::de::Error;
 
 pub struct Config {
     tiling_config: TilingConfig,
@@ -17,7 +15,17 @@ pub struct TilingConfig {
 }
 
 #[derive(Clone)]
-pub struct GapsConfig {}
+pub struct WindowConfig {
+    border_size: u16,
+    border_radius: u16,
+    open_in_center_on_floating_mode: bool,
+}
+
+#[derive(Clone)]
+pub struct GapsConfig {
+    inner_size: u16,
+    outer_size: u16,
+}
 
 pub enum LoadingConfigError {
     TomlParsingError(Error),

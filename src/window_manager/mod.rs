@@ -56,7 +56,7 @@ impl WindowManager {
 
     pub fn handle_event(&self, event: Event) {
         match event {
-            Event::X(_) => todo!(),
+            Event::X(xvent) => todo!(),
             Event::Shape(_) => todo!(),
             Event::XFixes(_) => todo!(),
             Event::Unknown(event) => self.handle_unknown_event(event),
