@@ -3,25 +3,27 @@ use std::{
     io::Read,
 };
 
+use serde::Deserialize;
 use toml::de::Error;
 
+#[derive(Clone, Deserialize)]
 pub struct Config {
     tiling_config: TilingConfig,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct TilingConfig {
     gaps_config: Option<GapsConfig>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct WindowConfig {
     border_size: u16,
     border_radius: u16,
     open_in_center_on_floating_mode: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct GapsConfig {
     inner_size: u16,
     outer_size: u16,
@@ -32,7 +34,9 @@ pub enum LoadingConfigError {
 }
 
 pub fn print_error(error: LoadingConfigError) {
-    todo!()
+    match error {
+        LoadingConfigError::TomlParsingError(error) => eprintln!("Error {}", error.message()),
+    }
 }
 
 impl Config {

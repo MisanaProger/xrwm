@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{borrow::BorrowMut, cell::RefCell, ops::Index};
 
 use xcb::x::Keycode;
 
@@ -13,7 +13,9 @@ impl KeyboardEventHandler {
             input_buffer: RefCell::new(Vec::new()),
         }
     }
-
+    fn input_buffer(&self) -> &mut Vec<KeyCode> {
+        self.borrow_mut()
+    }
     pub fn on_press(&self, event: xcb::x::KeyPressEvent) {
         self.input_buffer
             .borrow_mut()
@@ -21,11 +23,14 @@ impl KeyboardEventHandler {
     }
 
     pub fn on_relese(&self, event: xcb::x::KeyReleaseEvent) {
-        if self
-            .input_buffer
-            .borrow()
-            .contains(&Keycode::from(event.detail()))
-        {}
+        if self.input_buffer().contains(&Keycode::from(event.detail())) {
+            let index = self
+                .input_buffer()
+                .iter()
+                .position(|key| key == KeyCode::from(event.detail))
+                .unwrap();
+            self.input_buffer().remove(index);
+        }
     }
 }
 
