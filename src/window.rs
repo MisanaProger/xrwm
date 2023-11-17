@@ -1,5 +1,4 @@
 use std::{cell::RefCell, sync::Arc};
-
 use xcb::x::ConfigWindow;
 
 pub struct XWindow {
@@ -65,6 +64,10 @@ trait Window {
     fn move_to(&self, tag: u32);
     fn current_tag(&self) -> u32;
     fn allowed_tags(&self) -> TagRules;
+
+    fn show(&self) -> Result<(), xcb::ConnError>;
+    fn hide(&self) -> Result<(), xcb::ConnError>;
+    fn close(self) -> Result<(), xcb::ConnError>;
 }
 
 impl XWindow {
@@ -181,5 +184,26 @@ impl Window for XWindow {
 
     fn current_tag(&self) -> u32 {
         self.current_tag.clone().into_inner()
+    }
+
+    fn show(&self) -> Result<(), xcb::ConnError> {
+        self.connection.send_request(&xcb::x::MapWindow {
+            window: self.window(),
+        });
+        self.connection.flush()
+    }
+
+    fn hide(&self) -> Result<(), xcb::ConnError> {
+        self.connection.send_request(&xcb::x::UnmapWindow {
+            window: self.window(),
+        });
+        self.connection.flush()
+    }
+
+    fn close(self) -> Result<(), xcb::ConnError> {
+        self.connection.send_request(&xcb::x::DestroyWindow {
+            window: self.window(),
+        });
+        self.connection.flush()
     }
 }
