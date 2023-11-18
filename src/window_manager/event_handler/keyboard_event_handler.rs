@@ -4,7 +4,6 @@ use xcb::x::Keycode;
 
 pub struct KeyboardEventHandler {
     input_buffer: RefCell<Vec<KeyCode>>,
-    //  key_combinations: Vec<Vec<KeyCode>>,
 }
 
 impl KeyboardEventHandler {
