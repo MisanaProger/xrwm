@@ -9,7 +9,7 @@ pub struct KeyCombination {
 
 fn parce_combination(combination: String) -> Result<Vec<KeyCode>, ()> {
     let keys_result: Vec<Result<KeyCode, ()>> =
-        combination.split("+").map(|key_string| todo!()).collect();
+        combination.split(" + ").map(|key_string| todo!()).collect();
     let mut keys = Vec::new();
     for key in keys_result {
         if let Ok(key) = key {

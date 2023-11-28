@@ -1,6 +1,4 @@
-use std::{borrow::BorrowMut, cell::RefCell, ops::Index};
-
-use xcb::x::Keycode;
+use std::{cell::RefCell, fmt::format};
 
 pub struct KeyboardEventHandler {
     input_buffer: RefCell<Vec<KeyCode>>,
@@ -8,12 +6,13 @@ pub struct KeyboardEventHandler {
 
 impl KeyboardEventHandler {
     pub fn new() -> KeyboardEventHandler {
-        KeyboardEventHandler {
+        let keyboard_event_handler = KeyboardEventHandler {
             input_buffer: RefCell::new(Vec::new()),
-        }
+        };
+        keyboard_event_handler
     }
     fn input_buffer(&self) -> &mut Vec<KeyCode> {
-        self.borrow_mut()
+        self.input_buffer.get_mut()
     }
     pub fn on_press(&self, event: xcb::x::KeyPressEvent) {
         self.input_buffer
@@ -22,11 +21,11 @@ impl KeyboardEventHandler {
     }
 
     pub fn on_relese(&self, event: xcb::x::KeyReleaseEvent) {
-        if self.input_buffer().contains(&Keycode::from(event.detail())) {
+        if self.input_buffer().contains(&KeyCode::from(event.detail())) {
             let index = self
                 .input_buffer()
                 .iter()
-                .position(|key| key == KeyCode::from(event.detail))
+                .position(|key| *key == KeyCode::from(event.detail()))
                 .unwrap();
             self.input_buffer().remove(index);
         }
@@ -86,6 +85,7 @@ impl From<u8> for KeyCode {
     }
 }
 
+#[derive(PartialEq, Eq)]
 pub enum KeyCode {
     BackSpace,
     Cancel,
@@ -122,6 +122,7 @@ pub enum KeyCode {
     Up,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum Letter {
     A,
     B,
@@ -149,6 +150,40 @@ pub enum Letter {
     X,
     Y,
     Z,
+}
+
+impl ToString for Letter {
+    fn to_string(&self) -> String {
+        match self {
+            Letter::A => "a",
+            Letter::B => "b",
+            Letter::C => "c",
+            Letter::D => "d",
+            Letter::E => "e",
+            Letter::F => "f",
+            Letter::G => "g",
+            Letter::H => "h",
+            Letter::I => "i",
+            Letter::J => "j",
+            Letter::K => "k",
+            Letter::L => "l",
+            Letter::M => "m",
+            Letter::N => "n",
+            Letter::O => "o",
+            Letter::P => "p",
+            Letter::Q => "q",
+            Letter::R => "r",
+            Letter::S => "s",
+            Letter::T => "t",
+            Letter::U => "u",
+            Letter::V => "v",
+            Letter::W => "w",
+            Letter::X => "x",
+            Letter::Y => "y",
+            Letter::Z => "z",
+        }
+        .to_string()
+    }
 }
 
 impl TryFrom<u8> for Letter {
@@ -187,6 +222,7 @@ impl TryFrom<u8> for Letter {
     type Error = ();
 }
 
+#[derive(PartialEq, Eq)]
 pub enum ModKey {
     Shift(KeyPosition),
     Control(KeyPosition),
@@ -217,11 +253,36 @@ impl TryFrom<u8> for ModKey {
     }
 }
 
+impl ToString for ModKey {
+    fn to_string(&self) -> String {
+        match self {
+            ModKey::Shift(side) => format!("{}_Sh", side.to_string()),
+            ModKey::Control(side) => format!("{}_C", side.to_string()),
+            ModKey::Alt(side) => format!("{}_A", side.to_string()),
+            ModKey::Super(side) => format!("{}_Sup", side.to_string()),
+            ModKey::Meta(side) => format!("{}_M", side.to_string()),
+            ModKey::Hyper => "H".to_string(),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq)]
 pub enum KeyPosition {
     Left,
     Right,
 }
 
+impl ToString for KeyPosition {
+    fn to_string(&self) -> String {
+        match self {
+            KeyPosition::Left => "L",
+            KeyPosition::Right => "R",
+        }
+        .to_string()
+    }
+}
+
+#[derive(PartialEq, Eq)]
 pub enum Symbols {
     Apostrophe,
     BackSlash,
@@ -242,6 +303,7 @@ pub enum Symbols {
     Slash,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum Numpad {
     Num(u8),
     Devide,
@@ -301,6 +363,27 @@ impl TryFrom<u8> for Numpad {
     type Error = ();
 }
 
+impl ToString for Numpad {
+    fn to_string(&self) -> String {
+        format!(
+            "N_{}",
+            match self {
+                Numpad::Num(num) => num.to_string().as_str(),
+                Numpad::Devide => "/",
+                Numpad::Substract => "-",
+                Numpad::Add => "+",
+                Numpad::Multiply => "*",
+                Numpad::NumLock => "Lock",
+                Numpad::Enter => "Enter",
+                Numpad::Equal => "=",
+                Numpad::Decimal => ".",
+                Numpad::Delete => "delete",
+            },
+        )
+    }
+}
+
+#[derive(PartialEq, Eq)]
 pub enum Functional {
     Audio(Audio),
     Back,
@@ -358,7 +441,6 @@ pub enum Functional {
     Tools,
     TouchPad(TouchPad),
     UWB,
-    UnRecognized,
     WLAN,
     WWAN,
     WWW,
@@ -455,6 +537,79 @@ impl TryFrom<u8> for Functional {
     }
 }
 
+impl ToString for Functional {
+    fn to_string(&self) -> String {
+        format!(
+            "Fn_{}",
+            match self {
+                Functional::Audio(audio) => audio.to_string().as_str(),
+                Functional::Back => "Back",
+                Functional::Battery => "Battery",
+                Functional::Bluetooth => "Bluetooth",
+                Functional::BrightnessAuto => "BrightnessAuto",
+                Functional::Calculator => "Calculator",
+                Functional::Close => "Close",
+                Functional::Copy => "Copy",
+                Functional::Cut => "Cut",
+                Functional::DOS => "DOS",
+                Functional::Display => "Display",
+                Functional::DisplayOff => "Display_Off",
+                Functional::Documents => "Documents",
+                Functional::Eject => "Eject",
+                Functional::Explorer => "Explorer",
+                Functional::Farward => "Farward",
+                Functional::Favourite => "Favourite",
+                Functional::Finance => "Finance",
+                Functional::Game => "Game",
+                Functional::Go => "Go",
+                Functional::HomePage => "Home_Page",
+                Functional::KBD(kbd) => kbd.to_string().as_str(),
+                Functional::Kill => "Kill",
+                Functional::Launch(_) => "Launch",
+                Functional::LaunchA => "Launch_A",
+                Functional::LaunchB => "Launch_B",
+                Functional::Mail => "Mail",
+                Functional::MailFarward => "Mail_Farward",
+                Functional::Menu => "Menu",
+                Functional::Messanger => "Messanger",
+                Functional::Monitor(monitor) => monitor.to_string().as_str(),
+                Functional::MyComputer => "My_Computer",
+                Functional::New => "New",
+                Functional::NextVMode => "Next_V_Mode",
+                Functional::Open => "Open",
+                Functional::Paste => "Paste",
+                Functional::Phone => "Phone",
+                Functional::PowerOff => "Power_Off",
+                Functional::PrevVMode => "Prev_V_Mode",
+                Functional::Reload => "Reload",
+                Functional::Reply => "Reply",
+                Functional::RotateWindows => "Rotate_Windows",
+                Functional::Save => "Save",
+                Functional::ScreenSaver => "Screen_Saver",
+                Functional::ScrollDown => "Scroll_Down",
+                Functional::ScrollLock => "Scroll_Lock",
+                Functional::ScrollUp => "Scroll_Up",
+                Functional::Search => "Search",
+                Functional::Send => "Send",
+                Functional::Shop => "Shop",
+                Functional::Sleep => "Sleep",
+                Functional::Suspend => "Suspend",
+                Functional::TaskPlane => "Task_Plane",
+                Functional::Tools => "Tools",
+                Functional::TouchPad(touchpad) => touchpad.to_string().as_str(),
+                Functional::UWB => "UWB",
+                Functional::WLAN => "WLAN",
+                Functional::WWAN => "WWAN",
+                Functional::WWW => "WW",
+                Functional::WakeUp => "Wake_Up",
+                Functional::WebCamera => "Web_Camera",
+                Functional::Xref => "Xref",
+            }
+        )
+    }
+}
+
+#[derive(PartialEq, Eq)]
 pub enum KBD {
     ToggleLight,
     BrightnessUp,
@@ -474,10 +629,24 @@ impl TryFrom<u8> for KBD {
     }
 }
 
+#[derive(PartialEq, Eq)]
 pub enum Monitor {
     RiseBrightness,
     LowerBrightness,
     BrightnessCycle,
+}
+
+impl ToString for KBD {
+    fn to_string(&self) -> String {
+        format!(
+            "KDB_{}",
+            match self {
+                KBD::ToggleLight => "ToggleLight",
+                KBD::BrightnessUp => "Brightness+",
+                KBD::BrightnessDown => "Brightness-",
+            }
+        )
+    }
 }
 
 impl TryFrom<u8> for Monitor {
@@ -493,6 +662,20 @@ impl TryFrom<u8> for Monitor {
     }
 }
 
+impl ToString for Monitor {
+    fn to_string(&self) -> String {
+        format!(
+            "Mon_{}",
+            match self {
+                Monitor::RiseBrightness => "Brightness+",
+                Monitor::LowerBrightness => "Brightness-",
+                Monitor::BrightnessCycle => "Brightness_Cycle",
+            }
+        )
+    }
+}
+
+#[derive(PartialEq, Eq)]
 pub enum TouchPad {
     On,
     Off,
@@ -512,6 +695,20 @@ impl TryFrom<u8> for TouchPad {
     }
 }
 
+impl ToString for TouchPad {
+    fn to_string(&self) -> String {
+        format!(
+            "TouchPad_{}",
+            match self {
+                TouchPad::On => "On",
+                TouchPad::Off => "Off",
+                TouchPad::Toggle => "Toggle",
+            },
+        )
+    }
+}
+
+#[derive(PartialEq, Eq)]
 pub enum Audio {
     Volume(AudioVolume),
     Play,
@@ -551,10 +748,46 @@ impl TryFrom<u8> for Audio {
     }
 }
 
+impl ToString for Audio {
+    fn to_string(&self) -> String {
+        format!(
+            "Audio_{}",
+            match self {
+                Audio::Volume(volume) => volume.to_string().as_str(),
+                Audio::Play => "Play",
+                Audio::Next => "Next",
+                Audio::Prev => "Prev",
+                Audio::Stop => "Stop",
+                Audio::Pause => "Pause",
+                Audio::MuteMicrophone => "Mute_Micro",
+                Audio::Record => "Record",
+                Audio::Preset => "Preset",
+                Audio::Rewind => "Rewind",
+                Audio::Forward => "Forward",
+                Audio::Media => "Media",
+            }
+        )
+    }
+}
+
+#[derive(PartialEq, Eq)]
 pub enum AudioVolume {
     Lower,
     Rise,
     Mute,
+}
+
+impl ToString for AudioVolume {
+    fn to_string(&self) -> String {
+        format!(
+            "Vol{}",
+            match self {
+                AudioVolume::Lower => "-",
+                AudioVolume::Rise => "+",
+                AudioVolume::Mute => "Mute",
+            }
+        )
+    }
 }
 
 impl TryFrom<u8> for AudioVolume {
